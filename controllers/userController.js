@@ -1,5 +1,41 @@
+const User = require("../models/User");
 
+// ALTAS USUARIOS
+exports.addUser = async(req,res) =>{
+    try{
+        let user;
+        user = new User(req.body);
+        await user.save();
+        res.send(user);
+    }
+    catch(error){
+        console.log("Hubo un problema");
+    }
+}
 
+// OBTENER TODOS LOS USUARIOS
+exports.getUsers = async(req,res) => {
+    try{
+        const usuarios = await User.find();
+        res.json(usuarios);
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).res('Hubo un error');
+    }
+}
+
+// OBTENER TODOS LOS vendedores
+exports.getVendors = async(req,res) => {
+    try{
+        const usuarios = await User.find({ userType: "Ventas" });
+        res.json(usuarios);
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).res('Hubo un error');
+    }
+}
 
 // OBTENER USUARIO POR ID
 exports.getUserById = async(req,res) => {
