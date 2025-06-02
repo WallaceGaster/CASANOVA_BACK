@@ -10,6 +10,16 @@ router.post('/postColindanciaById',colindanciaController.postColindanciaById);
 router.post('/addColindancia',colindanciaController.addColindancia);
 router.get('/getColindanciasPorId/:id',colindanciaController.getColindanciasById);
 
+router.post('/addUser',userController.addUser);
+router.get('/getUsers',userController.getUsers);
+router.post('/authUser',userController.authUser);
+router.post('/getUser',userController.getUserRegex);
+router.post('/getUserById',userController.getUserById);
+router.get('/getUsernameById/:id',leadController.getUsernameById);
+router.delete('/deleteUser/:id',userController.deleteUser);
+router.get('/getVendors',userController.getVendors);
+
+
 
 module.exports = router;
 
