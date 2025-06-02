@@ -152,3 +152,98 @@ exports.getotalventas = async (req, res) => {
         res.status(500).json({ error: "Error al obtener las etapas de desarrollo" });
     }
 };
+
+//APARTADOS Y VENDIDOS POR DESARROLLO
+exports.getEtapasDesarrollo = async (req, res) => {
+    try {
+        const inventarios = await Inventario.find({
+            $or: [
+              { estado: "Ocupado" },
+              { estado: "Apartado" }
+              // Agrega más condiciones OR si es necesario
+            ]
+          });
+
+        const conteostatus = inventarios.reduce((conteo, inv) => {
+            const estadoinv = inv.desarrollo;
+
+            conteo[estadoinv] = (conteo[estadoinv] || 0) + 1;
+
+            return conteo;
+        }, {});
+
+        const resultadoFinal = Object.entries(conteostatus).map(([name, value]) => ({ name, value }));
+
+
+        res.json(resultadoFinal);
+        return
+    }
+    catch (error) {
+        console.log("Hubo un problema");
+    }
+}
+
+exports.assignCoordenada = async (req, res) => {
+    const { inventarioId, coordenadaId } = req.body; // Suponemos que el inventarioId y coordenadaId vienen en el cuerpo de la solicitud
+
+    try {
+        // Encontrar el inventario por su ID
+        const inventario = await Inventario.findById(inventarioId);
+
+        if (!inventario) {
+            return res.status(404).json({ error: 'Inventario no encontrado' });
+        }
+
+        // Asignar el ID de la coordenada al inventario
+        inventario.id_coordenada = coordenadaId;
+
+        // Guardar el inventario actualizado
+        await inventario.save();
+
+        // Devolver el inventario actualizado en la respuesta JSON
+        return res.status(200).json({ inventario });
+
+    } catch (error) {
+        console.error('Error al guardar ID de coordenada en el inventario:', error.message);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
+
+//Borrar inventario
+exports.borrarInv = async(req,res)=>{
+    try{
+        const idparam = req.body.id;
+        var borrado2 = await Inventario.deleteMany({ _id: idparam });
+        
+        res.send(borrado2);
+        return
+
+    }
+    catch(error){
+        console.log("Hubo un problema",error);
+    }
+}
+
+
+
+// Función para cambiar el atributo 'estado'
+exports.cambiarEstado = async (req, res) => {
+    try {
+        const { id } = req.params;  // Obtén el ID del documento desde los parámetros de la solicitud
+        const { estado } = req.body;  // Obtén el nuevo estado desde el cuerpo de la solicitud
+        
+        // Encuentra el documento por ID y actualiza el atributo 'estado'
+        const inventario = await Inventario.findByIdAndUpdate(id, { estado }, { new: true });
+        
+        if (!inventario) {
+            // Si el documento no se encuentra
+            return res.status(404).json({ mensaje: 'Inventario no encontrado' });
+        }
+        
+        // Responde con el inventario actualizado
+        res.json(inventario);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error en el servidor' });
+    }
+};
