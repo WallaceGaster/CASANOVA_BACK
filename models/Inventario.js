@@ -17,6 +17,18 @@ const InventarioSchema = mongoose.Schema({
         type:String,
         required:true
     },
+    manzana:{
+        type:String,
+        required:true
+    },
+    lote:{
+        type:String,
+        requires:true
+    },
+    metros:{
+        type:String,
+        requires:true
+    },
     prototipo:{
         type:String,
         requires:true
