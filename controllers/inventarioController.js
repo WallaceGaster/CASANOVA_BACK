@@ -1,6 +1,78 @@
+const Inventario = require("../models/Inventario");
+
+exports.addInventario = async(req,res)=>{
+    console.log(req.body);
+    try{
+        let inventario;
+        inventario = new Inventario(req.body);
+        await inventario.save();
+        res.send(inventario);
+
+    }
+    catch(error){
+         console.log(error);
+        console.log("Tienes una problema");
+    }
+}
+
+exports.getInventarios = async(req,res) =>{
+    try{
+        const inventario = await Inventario.find();
+        res.json(inventario);
+
+    }
+    catch(error){
+        console.log("Hubo un problema");
+    }
+}
+
+exports.getInventariosDisponibles = async(req,res) =>{
+    try{
+        const inventario = await Inventario.find({ estado: "Disponible" });
+        res.json(inventario);
+
+    }
+    catch(error){
+        console.log("Hubo un problema");
+    }
+}
+
+exports.assignColindancias = async (req, res) => {
+    const { inventarioId, colindanciasArray } = req.body; // Suponiendo que los datos vienen en el cuerpo de la solicitud
+    
+    try {
+        // Actualizar el inventario con las nuevas colindancias
+        const inventarioActualizado = await Inventario.findByIdAndUpdate(inventarioId, { colindancias: colindanciasArray }, { new: true });
+
+        if (!inventarioActualizado) {
+            return res.status(404).json({ error: 'Inventario no encontrado' });
+        }
+
+        return res.status(200).json({ inventario: inventarioActualizado });
+    } catch (error) {
+        console.error('Error al asignar colindancias:', error.message);
+        return res.status(500).json({ error: 'Error interno del servidor' });
+    }
+};
 
 
 
+exports.getInventarioPorId = async (req, res) => {
+    try {
+        const { id } = req.params; // Suponiendo que el ID se pasa como parámetro en la URL
+        
+        const inventario = await Inventario.findById(id);
+        
+        if (!inventario) {
+            return res.status(404).json({ mensaje: 'Inventario no encontrado' });
+        }
+        
+        res.json(inventario);
+    } catch (error) {
+        console.log("Hubo un problema:", error);
+        res.status(500).json({ mensaje: 'Hubo un problema al buscar el inventario' });
+    }
+};
 
 
 exports.updateInventario = async (req, res) => {
