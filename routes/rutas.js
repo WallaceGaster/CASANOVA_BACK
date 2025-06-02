@@ -11,6 +11,21 @@ router.post('/addColindancia',colindanciaController.addColindancia);
 router.get('/getColindanciasPorId/:id',colindanciaController.getColindanciasById);
 
 
+
+router.post('/addInventario',inventarioController.addInventario);
+router.get('/getConteoStatus',inventarioController.getConteoStatus);
+router.post('/updateInventario',inventarioController.updateInventario);
+router.post('/borrarInv',inventarioController.borrarInv);
+router.get('/getInventarios',inventarioController.getInventarios);
+router.get('/getInventariosDisponibles',inventarioController.getInventariosDisponibles);
+router.get('/getInventarioPorId/:id',inventarioController.getInventarioPorId);
+router.put('/putColindancias',inventarioController.assignColindancias);
+router.post('/postAssignCoordenada', inventarioController.assignCoordenada);
+router.put('/putCambiarEstado/:id', inventarioController.cambiarEstado);
+router.get('/getEtapasDesarrollo',inventarioController.getEtapasDesarrollo);
+router.get('/getotalventas',inventarioController.getotalventas);
+
+
 module.exports = router;
 
 
