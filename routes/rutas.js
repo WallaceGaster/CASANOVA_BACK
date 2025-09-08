@@ -9,6 +9,10 @@ const cotizacionController = require('../controllers/cotizacionController');
 const imagenMapaController = require('../controllers/imagenMapaController');
 const pronosticoController = require('../controllers/pronosticoController');
 const reporteController = require('../controllers/reporteController');
+const leadController = require('../controllers/leadController');
+const mapaController = require('../controllers/mapaController');
+const mensualidadController = require('../controllers/mensualidadController');
+
 
 router.get('/getColindanciaById/:id',colindanciaController.getColindanciaById);
 router.post('/postColindanciaById',colindanciaController.postColindanciaById);
@@ -66,6 +70,61 @@ router.get('/getReportesfin',reporteController.getReportesfin);
 router.delete('/deleteReporte/:id',reporteController.deleteReporte);
 router.get('/getReportesCategoria',reporteController.getReportesCategoria);
 router.post('/setEstado',reporteController.setEstado);
+
+
+router.post('/addLead',leadController.addLead);
+router.get('/getVendorAcomulado',leadController.getVendorAcomulado);
+router.post('/anvanzarLead',leadController.anvanzarLead);
+router.post('/regresarLead',leadController.regresarLead);
+router.get('/getLeads',leadController.getLeads);
+router.get('/getLeadsVendorMes',leadController.getLeadsVendorMes);
+router.get('/getCategoryLeads',leadController.getCategoryLeads);
+router.post('/cambiarVendorLead',leadController.cambiarVendorLead);
+
+
+
+router.get('/getLeadsApartados',leadController.getLeadsApartados);
+router.get('/getLeadsProspectos',leadController.getLeadsProspectos);
+router.get('/getLeadsLeads',leadController.getLeadsLeads);
+
+//aaaa
+router.get('/getLeadsEntregado',leadController.getLeadsEntregado);
+router.get('/getLeadsFirmado',leadController.getLeadsFirmado);
+router.get('/getLeadsContrato',leadController.getLeadsContrato);
+router.get('/getLeadsCotizado',leadController.getLeadsCotizado);
+
+router.get('/getLeadsNotarial',leadController.getLeadsNotarial);
+router.get('/getLeadsListoNotarial',leadController.getLeadsListoNotarial);
+
+router.get('/getApartadosConteo',leadController.getApartadosConteo);
+
+router.get('/getLeadsGlobalConteo',leadController.getLeadsGlobalConteo);
+
+router.get('/getApartadoPorCanal',leadController.getApartadoPorCanal);
+router.get('/getApartadoPorprototipo',leadController.getApartadoPorprototipo);
+
+router.get('/getHitrateApartado',leadController.getHitrateApartado);
+router.get('/getLeadsMes',leadController.getLeadsMes);
+
+router.post('/getLeadsByVendor',leadController.getLeadsByVendor);
+
+router.post('/setApartado',leadController.setApartado);
+router.post('/popApartado',leadController.popApartado);
+
+router.get('/getLead/:id', leadController.getLeadById);
+
+router.post('/addMensualidad',mensualidadController.addMensualidad);
+router.post('/borrarPorIdCotizacion',mensualidadController.borrarPorIdCotizacion);
+router.post('/getMensualidadesPorId',mensualidadController.buscarPorIdCotizacion);
+
+router.post('/addMapa',mapaController.addMapa);
+router.delete('/deleteMapa/:id',mapaController.eliminarPorId);
+router.put('/putCoordenadas',mapaController.assignCoordenadas);
+router.get('/getMapas',mapaController.getMapas);
+router.get('/getMapaPorId/:id',mapaController.getMapaPorId);
+
+
+
 
 module.exports = router;
 
