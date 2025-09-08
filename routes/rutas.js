@@ -4,6 +4,9 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const colindanciaController = require('../controllers/colindanciaController');
 const inventarioController = require('../controllers/inventarioController');
+const coordenadaController = require('../controllers/coordenadaController');
+const cotizacionController = require('../controllers/cotizacionController');
+const imagenMapaController = require('../controllers/imagenMapaController');
 
 router.get('/getColindanciaById/:id',colindanciaController.getColindanciaById);
 router.post('/postColindanciaById',colindanciaController.postColindanciaById);
@@ -15,7 +18,6 @@ router.get('/getUsers',userController.getUsers);
 router.post('/authUser',userController.authUser);
 router.post('/getUser',userController.getUserRegex);
 router.post('/getUserById',userController.getUserById);
-router.get('/getUsernameById/:id',leadController.getUsernameById);
 router.delete('/deleteUser/:id',userController.deleteUser);
 router.get('/getVendors',userController.getVendors);
 
@@ -35,6 +37,23 @@ router.put('/putCambiarEstado/:id', inventarioController.cambiarEstado);
 router.get('/getEtapasDesarrollo',inventarioController.getEtapasDesarrollo);
 router.get('/getotalventas',inventarioController.getotalventas);
 
+
+router.post('/addCoordenada',coordenadaController.addCoordenada);
+router.delete('/deleteCoordenada',coordenadaController.eliminarPorId);
+router.get('/getCoordenadas/:id',coordenadaController.buscarCoordenadasPorIdMapa);
+router.put('/putNombreLote/',coordenadaController.actualizarNombreLote);
+router.put('/putIdInventario',coordenadaController.actualizarIdInventario);
+router.put('/putEstadoLote/',coordenadaController.actualizarEstadoLote);
+router.post('/postCoordenadaPorId',coordenadaController.buscarCoordenadaPorId);
+
+router.post('/addCotizacion',cotizacionController.addCotizacion);
+router.post('/borrarCotizacionPorIdUsuario',cotizacionController.borrarCotizacionPorIdUsuario);
+router.post('/getCotizacionPorIdCotizacion',cotizacionController.buscarCotizacionPorIdCotizacion);
+router.post('/getCotizacionPorIdUsuario',cotizacionController.buscarCotizacionPorIdUsuario);
+
+
+router.post('/addUrlMapa',imagenMapaController.addMapa);
+router.get('/getUrlMapas',imagenMapaController.getMapas);
 
 module.exports = router;
 
