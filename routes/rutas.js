@@ -5,6 +5,7 @@ const userController = require('../controllers/userController');
 const colindanciaController = require('../controllers/colindanciaController');
 const inventarioController = require('../controllers/inventarioController');
 const coordenadaController = require('../controllers/coordenadaController');
+const cotizacionController = require('../controllers/cotizacionController');
 
 router.get('/getColindanciaById/:id',colindanciaController.getColindanciaById);
 router.post('/postColindanciaById',colindanciaController.postColindanciaById);
@@ -43,6 +44,12 @@ router.put('/putNombreLote/',coordenadaController.actualizarNombreLote);
 router.put('/putIdInventario',coordenadaController.actualizarIdInventario);
 router.put('/putEstadoLote/',coordenadaController.actualizarEstadoLote);
 router.post('/postCoordenadaPorId',coordenadaController.buscarCoordenadaPorId);
+
+router.post('/addCotizacion',cotizacionController.addCotizacion);
+router.post('/borrarCotizacionPorIdUsuario',cotizacionController.borrarCotizacionPorIdUsuario);
+router.post('/getCotizacionPorIdCotizacion',cotizacionController.buscarCotizacionPorIdCotizacion);
+router.post('/getCotizacionPorIdUsuario',cotizacionController.buscarCotizacionPorIdUsuario);
+
 
 module.exports = router;
 
