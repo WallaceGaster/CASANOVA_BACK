@@ -7,11 +7,14 @@ const inventarioController = require('../controllers/inventarioController');
 const coordenadaController = require('../controllers/coordenadaController');
 const cotizacionController = require('../controllers/cotizacionController');
 const imagenMapaController = require('../controllers/imagenMapaController');
+const pronosticoController = require('../controllers/pronosticoController');
+const reporteController = require('../controllers/reporteController');
 
 router.get('/getColindanciaById/:id',colindanciaController.getColindanciaById);
 router.post('/postColindanciaById',colindanciaController.postColindanciaById);
 router.post('/addColindancia',colindanciaController.addColindancia);
 router.get('/getColindanciasPorId/:id',colindanciaController.getColindanciasById);
+
 
 router.post('/addUser',userController.addUser);
 router.get('/getUsers',userController.getUsers);
@@ -20,8 +23,6 @@ router.post('/getUser',userController.getUserRegex);
 router.post('/getUserById',userController.getUserById);
 router.delete('/deleteUser/:id',userController.deleteUser);
 router.get('/getVendors',userController.getVendors);
-
-
 
 
 router.post('/addInventario',inventarioController.addInventario);
@@ -54,6 +55,17 @@ router.post('/getCotizacionPorIdUsuario',cotizacionController.buscarCotizacionPo
 
 router.post('/addUrlMapa',imagenMapaController.addMapa);
 router.get('/getUrlMapas',imagenMapaController.getMapas);
+
+router.post('/addPronosticos',pronosticoController.addPronostico);
+router.post('/updatePronostico',pronosticoController.updatePronostico);
+router.get('/getPronostico',pronosticoController.getPronosticos);
+
+router.post('/addReporte',reporteController.addReporte);
+router.get('/getReporte',reporteController.getReportes);
+router.get('/getReportesfin',reporteController.getReportesfin);
+router.delete('/deleteReporte/:id',reporteController.deleteReporte);
+router.get('/getReportesCategoria',reporteController.getReportesCategoria);
+router.post('/setEstado',reporteController.setEstado);
 
 module.exports = router;
 
