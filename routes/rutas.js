@@ -117,6 +117,11 @@ router.post('/addMensualidad',mensualidadController.addMensualidad);
 router.post('/borrarPorIdCotizacion',mensualidadController.borrarPorIdCotizacion);
 router.post('/getMensualidadesPorId',mensualidadController.buscarPorIdCotizacion);
 
+router.post('/addMapa',mapaController.addMapa);
+router.delete('/deleteMapa/:id',mapaController.eliminarPorId);
+router.put('/putCoordenadas',mapaController.assignCoordenadas);
+router.get('/getMapas',mapaController.getMapas);
+router.get('/getMapaPorId/:id',mapaController.getMapaPorId);
 
 module.exports = router;
 
