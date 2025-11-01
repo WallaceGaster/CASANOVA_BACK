@@ -125,27 +125,29 @@ jobs:
         fi
         
         # Agregar health check endpoint al archivo principal temporalmente
-        cat >> $MAIN_FILE << 'EOF'
-
-// Health check endpoint for testing
-if (typeof app !== 'undefined') {
-  app.get('/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'OK', 
-      message: 'Server is running',
-      timestamp: new Date().toISOString()
-    });
-  });
-  
-  app.get('/casNov/api/health', (req, res) => {
-    res.status(200).json({ 
-      status: 'OK', 
-      message: 'API is running',
-      timestamp: new Date().toISOString()
-    });
-  });
-}
-EOF
+        cat > health_check.js << 'HEALTH_EOF'
+        // Health check endpoint for testing
+        if (typeof app !== 'undefined') {
+          app.get('/health', (req, res) => {
+            res.status(200).json({ 
+              status: 'OK', 
+              message: 'Server is running',
+              timestamp: new Date().toISOString()
+            });
+          });
+          
+          app.get('/casNov/api/health', (req, res) => {
+            res.status(200).json({ 
+              status: 'OK', 
+              message: 'API is running',
+              timestamp: new Date().toISOString()
+            });
+          });
+        }
+        HEALTH_EOF
+              
+        cat health_check.js >> $MAIN_FILE
+        echo "✅ Health check endpoints added to $MAIN_FILE"
 
         echo "🔄 Starting server..."
         nohup node $MAIN_FILE > server.log 2>&1 &
@@ -204,7 +206,7 @@ EOF
     - name: 🧪 Run basic connectivity tests
       run: |
         echo "🧪 Running basic connectivity tests..."
-        cat > basic-tests.js << 'EOF'
+        cat > basic-tests.js << 'BASIC_EOF'
         const http = require('http');
         
         const tests = [
@@ -224,20 +226,20 @@ EOF
               let data = '';
               res.on('data', chunk => data += chunk);
               res.on('end', () => {
-                console.log(`✅ ${test.name} - Status: ${res.statusCode}`);
+                console.log(\`✅ \${test.name} - Status: \${res.statusCode}\`);
                 passed++;
                 resolve(true);
               });
             });
             
             req.on('error', (error) => {
-              console.log(`❌ ${test.name} - Error: ${error.message}`);
+              console.log(\`❌ \${test.name} - Error: \${error.message}\`);
               failed++;
               resolve(false);
             });
             
             req.setTimeout(10000, () => {
-              console.log(`❌ ${test.name} - Timeout`);
+              console.log(\`❌ \${test.name} - Timeout\`);
               failed++;
               resolve(false);
             });
@@ -255,9 +257,9 @@ EOF
           
           console.log('\\n📊 TEST SUMMARY');
           console.log('===============');
-          console.log(`✅ Passed: ${passed}`);
-          console.log(`❌ Failed: ${failed}`);
-          console.log(`📊 Success Rate: ${((passed / tests.length) * 100).toFixed(2)}%`);
+          console.log(\`✅ Passed: \${passed}\`);
+          console.log(\`❌ Failed: \${failed}\`);
+          console.log(\`📊 Success Rate: \${((passed / tests.length) * 100).toFixed(2)}%\`);
           
           if (failed > 0) {
             process.exit(1);
@@ -265,7 +267,7 @@ EOF
         }
         
         runAllTests();
-        EOF
+        BASIC_EOF
         
         node basic-tests.js
 
@@ -273,7 +275,7 @@ EOF
       if: success()
       run: |
         echo "🧪 Running comprehensive controller tests..."
-        cat > enhanced-controller-tests.js << 'EOF'
+        cat > enhanced-controller-tests.js << 'CONTROLLER_EOF'
         const http = require('http');
         
         const BASE_URL = 'http://localhost:5001/casNov/api';
@@ -324,10 +326,10 @@ EOF
           results.total++;
           if (success) {
             results.passed++;
-            console.log(`✅ GET ${endpoint} - ${statusCode} ${details}`);
+            console.log(\`✅ GET \${endpoint} - \${statusCode} \${details}\`);
           } else {
             results.failed++;
-            console.log(`❌ GET ${endpoint} - ${statusCode} ${details}`);
+            console.log(\`❌ GET \${endpoint} - \${statusCode} \${details}\`);
           }
         }
         
@@ -344,7 +346,7 @@ EOF
                 try {
                   const json = JSON.parse(data);
                   if (Array.isArray(json)) {
-                    details = `[${json.length} items]`;
+                    details = \`[\${json.length} items]\`;
                   }
                 } catch (e) {}
                 
@@ -410,10 +412,10 @@ EOF
           // Summary
           console.log('\\n📊 TEST SUMMARY');
           console.log('===============');
-          console.log(`Total Tests: ${results.total}`);
-          console.log(`✅ Passed: ${results.passed}`);
-          console.log(`❌ Failed: ${results.failed}`);
-          console.log(`📊 Success Rate: ${((results.passed / results.total) * 100).toFixed(2)}%`);
+          console.log(\`Total Tests: \${results.total}\`);
+          console.log(\`✅ Passed: \${results.passed}\`);
+          console.log(\`❌ Failed: \${results.failed}\`);
+          console.log(\`📊 Success Rate: \${((results.passed / results.total) * 100).toFixed(2)}%\`);
           
           if (results.failed > 0) {
             console.log('\\n⚠️ Some tests failed. Check server configuration and routes.');
@@ -424,7 +426,7 @@ EOF
         }
         
         runAllTests();
-        EOF
+        CONTROLLER_EOF
         
         node enhanced-controller-tests.js
 
