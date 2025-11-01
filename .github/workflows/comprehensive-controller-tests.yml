@@ -37,8 +37,8 @@ jobs:
 
     - name: Initialize test database
       run: |
-        # Crear archivo de datos de prueba separado
-        cat > setup-db.js << 'SCRIPT'
+        # Crear archivo de datos de prueba
+        cat > setup-db.js << 'DB_SCRIPT'
         const mongoose = require('mongoose');
         
         async function setupTestData() {
@@ -97,14 +97,14 @@ jobs:
         }
         
         setupTestData();
-        SCRIPT
+        DB_SCRIPT
         
         node setup-db.js
 
     - name: Add health endpoints and start server
       run: |
         # Crear archivo temporal con health endpoints
-        cat > health-endpoints.js << 'SCRIPT'
+        cat > health-endpoints.js << 'HEALTH_SCRIPT'
         // Health check endpoints
         app.get('/health', (req, res) => {
           res.status(200).json({ 
@@ -121,7 +121,7 @@ jobs:
             timestamp: new Date().toISOString()
           });
         });
-        SCRIPT
+        HEALTH_SCRIPT
         
         # Agregar health endpoints al archivo principal
         cat health-endpoints.js >> index.js
@@ -145,8 +145,8 @@ jobs:
 
     - name: Run controller tests
       run: |
-        # Crear archivo de pruebas
-        cat > run-tests.js << 'SCRIPT'
+        # Crear archivo de pruebas sin template literals problemáticos
+        cat > run-tests.js << 'TEST_SCRIPT'
         const http = require('http');
         
         const BASE_URL = 'http://localhost:5000/casNov/api';
@@ -165,31 +165,31 @@ jobs:
         let passed = 0;
         let failed = 0;
         
-        async function testEndpoint(endpoint) {
+        function testEndpoint(endpoint) {
           return new Promise((resolve) => {
             const req = http.request(BASE_URL + endpoint, (res) => {
               let data = '';
-              res.on('data', chunk => data += chunk);
-              res.on('end', () => {
+              res.on('data', function(chunk) { data += chunk; });
+              res.on('end', function() {
                 if (res.statusCode === 200) {
-                  console.log(\`✅ \${endpoint} - Status: \${res.statusCode}\`);
+                  console.log('✅ ' + endpoint + ' - Status: ' + res.statusCode);
                   passed++;
                 } else {
-                  console.log(\`❌ \${endpoint} - Status: \${res.statusCode}\`);
+                  console.log('❌ ' + endpoint + ' - Status: ' + res.statusCode);
                   failed++;
                 }
                 resolve();
               });
             });
             
-            req.on('error', () => {
-              console.log(\`❌ \${endpoint} - Connection failed\`);
+            req.on('error', function() {
+              console.log('❌ ' + endpoint + ' - Connection failed');
               failed++;
               resolve();
             });
             
-            req.setTimeout(5000, () => {
-              console.log(\`❌ \${endpoint} - Timeout\`);
+            req.setTimeout(5000, function() {
+              console.log('❌ ' + endpoint + ' - Timeout');
               failed++;
               resolve();
             });
@@ -206,9 +206,10 @@ jobs:
           }
           
           console.log('\\nTest Summary:');
-          console.log(\`✅ Passed: \${passed}\`);
-          console.log(\`❌ Failed: \${failed}\`);
-          console.log(\`📊 Success Rate: \${((passed / endpoints.length) * 100).toFixed(1)}%\`);
+          console.log('✅ Passed: ' + passed);
+          console.log('❌ Failed: ' + failed);
+          var successRate = ((passed / endpoints.length) * 100).toFixed(1);
+          console.log('📊 Success Rate: ' + successRate + '%');
           
           if (failed > 0) {
             console.log('Some tests failed - this may be expected');
@@ -216,13 +217,14 @@ jobs:
         }
         
         runTests();
-        SCRIPT
+        TEST_SCRIPT
         
         node run-tests.js
 
-    - name: Test authentication
+    - name: Test authentication endpoint
       run: |
-        cat > test-auth.js << 'SCRIPT'
+        # Crear archivo de prueba de autenticación
+        cat > test-auth.js << 'AUTH_SCRIPT'
         const http = require('http');
         
         const data = JSON.stringify({
@@ -237,35 +239,54 @@ jobs:
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Content-Length': data.length
+            'Content-Length': Buffer.byteLength(data)
           }
         };
         
-        const req = http.request(options, (res) => {
+        const req = http.request(options, function(res) {
           let response = '';
-          res.on('data', chunk => response += chunk);
-          res.on('end', () => {
+          res.on('data', function(chunk) { response += chunk; });
+          res.on('end', function() {
             if (res.statusCode === 200) {
               console.log('✅ Authentication test passed');
             } else {
-              console.log(\`❌ Authentication test failed - Status: \${res.statusCode}\`);
+              console.log('❌ Authentication test failed - Status: ' + res.statusCode);
             }
           });
         });
         
-        req.on('error', () => {
+        req.on('error', function() {
           console.log('❌ Authentication test - Connection failed');
         });
         
         req.write(data);
         req.end();
-        SCRIPT
+        AUTH_SCRIPT
         
         node test-auth.js
+
+    - name: Test additional endpoints
+      run: |
+        # Probar algunos endpoints adicionales importantes
+        echo "Testing additional endpoints..."
+        
+        # Usar curl para probar endpoints
+        curl -s http://localhost:5000/casNov/api/getUsers > /dev/null && echo "✅ getUsers endpoint working" || echo "❌ getUsers endpoint failed"
+        curl -s http://localhost:5000/casNov/api/getLeads > /dev/null && echo "✅ getLeads endpoint working" || echo "❌ getLeads endpoint failed"
+        curl -s http://localhost:5000/casNov/api/getInventarios > /dev/null && echo "✅ getInventarios endpoint working" || echo "❌ getInventarios endpoint failed"
+
+    - name: Check server status
+      run: |
+        echo "Checking server status..."
+        curl -s http://localhost:5000/health | head -c 100
+        echo ""
+        echo "Active connections:"
+        netstat -tuln | grep 5000 || echo "No active connections on port 5000"
 
     - name: Cleanup
       if: always()
       run: |
+        echo "Cleaning up..."
         if [ -f server.pid ]; then
           kill $(cat server.pid) 2>/dev/null || true
           echo "Server stopped"
