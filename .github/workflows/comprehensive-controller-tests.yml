@@ -340,7 +340,7 @@ jobs:
             console.log(`✅ Created ${cotizaciones.length} quotes and ${mensualidades.length} payments`);
             
             // Crear reportes
-            console.log '📊 Creating reports...');
+            console.log ('📊 Creating reports...');
             const reportes = await Reporte.insertMany([
               {
                 tipo: 'Mantenimiento',
