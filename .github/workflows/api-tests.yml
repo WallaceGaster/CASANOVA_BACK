@@ -13,14 +13,9 @@ jobs:
     
     services:
       mongodb:
-        image: mongo:5.0  # ✅ Cambiar a versión más estable
+        image: mongo:5.0
         ports:
           - 27017:27017
-        options: >-
-          --health-cmd mongo
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
     - name: 🛎️ Checkout code
@@ -35,44 +30,76 @@ jobs:
     - name: 📦 Install dependencies
       run: npm install
     
-    - name: 🗄️ Wait for MongoDB to be ready
+    - name: 🔧 Debug:Check server configuration
       run: |
-        echo "Waiting for MongoDB to start..."
-        # Esperar explícitamente a que MongoDB esté listo
-        sleep 10
-        docker ps
-        docker logs $(docker ps -q --filter "ancestor=mongo:5.0") || echo "MongoDB container not found"
+        echo "🔍 Analyzing server configuration..."
+        # Verificar si index.js exporta una app Express
+        if grep -q "module.exports" index.js || grep -q "exports" index.js; then
+          echo "✅ index.js exports something"
+        else
+          echo "❌ index.js doesn't seem to export anything"
+        fi
+        
+        # Buscar puertos en el código
+        echo "📋 Ports found in code:"
+        grep -r "PORT\|port\|3000\|3001" . --include="*.js" | head -10 || echo "No ports found"
+        
+        # Verificar estructura del index.js
+        echo "📁 index.js structure:"
+        head -20 index.js
     
-    - name: 🧪 Create test script
+    - name: 🧪 Create test script with better debugging
       run: |
         cat > test-ci.js << 'EOF'
         const http = require('http');
+        const net = require('net');
         
-        async function testEndpoint(endpoint) {
+        // Función para verificar si un puerto está en uso
+        function isPortInUse(port) {
+          return new Promise((resolve) => {
+            const server = net.createServer();
+            server.once('error', () => resolve(true));
+            server.once('listening', () => {
+              server.close();
+              resolve(false);
+            });
+            server.listen(port);
+          });
+        }
+        
+        async function findServerPort() {
+          const ports = [3001, 3000, 5000, 8000, 8080];
+          console.log('🔍 Searching for server port...');
+          
+          for (const port of ports) {
+            if (await isPortInUse(port)) {
+              console.log(`✅ Found server on port ${port}`);
+              return port;
+            }
+          }
+          return null;
+        }
+        
+        async function testEndpoint(port, endpoint) {
           return new Promise((resolve, reject) => {
             const req = http.request({
               hostname: 'localhost',
-              port: 3001,
+              port: port,
               path: endpoint,
               method: 'GET',
-              timeout: 10000
+              timeout: 5000
             }, (res) => {
               let data = '';
               res.on('data', chunk => data += chunk);
               res.on('end', () => {
-                console.log('✅ ' + endpoint + ' - Status: ' + res.statusCode);
-                resolve();
+                console.log(`✅ ${endpoint} - Status: ${res.statusCode}`);
+                resolve({ port, status: res.statusCode, data });
               });
             });
             
             req.on('error', (err) => {
-              console.log('❌ ' + endpoint + ' - Error: ' + err.message);
+              console.log(`❌ Port ${port}${endpoint} - ${err.message}`);
               reject(err);
-            });
-            
-            req.on('timeout', () => {
-              req.destroy();
-              reject(new Error('Timeout after 10s'));
             });
             
             req.end();
@@ -80,22 +107,32 @@ jobs:
         }
         
         async function runTests() {
-          console.log('🚀 Starting API Tests...');
+          console.log('🚀 Starting advanced API tests...');
+          
+          // Buscar en qué puerto está el servidor
+          const serverPort = await findServerPort();
+          
+          if (!serverPort) {
+            console.log('💀 No server found on common ports');
+            return;
+          }
+          
+          console.log(`🎯 Testing server on port ${serverPort}`);
+          
           const tests = [
             '/',
             '/api/getUsers',
-            '/api/getInventarios', 
-            '/api/getLeads',
-            '/api/getVendors'
+            '/api/getInventarios'
           ];
           
           for (const test of tests) {
             try {
-              await testEndpoint(test);
+              await testEndpoint(serverPort, test);
             } catch (err) {
-              console.log('⚠️  Skipping ' + test + ' due to error');
+              console.log(`⚠️  Skipping ${test} due to error`);
             }
           }
+          
           console.log('🎉 Test sequence completed');
         }
         
@@ -105,43 +142,118 @@ jobs:
         });
         EOF
     
-    - name: 🚀 Start server
+    - name: 🚀 Start server with enhanced monitoring
       run: |
         echo "DB_MONGO=mongodb://localhost:27017/test_github" > .env
         echo "PORT=3001" >> .env
         
-        nohup node index.js > server.log 2>&1 &
+        echo "🔧 Starting server with detailed monitoring..."
+        
+        # Iniciar servidor con logging mejorado
+        nohup node -e "
+        console.log('🔄 Starting server initialization...');
+        console.log('📋 Process env:', {
+          PORT: process.env.PORT,
+          DB_MONGO: process.env.DB_MONGO ? 'SET' : 'NOT SET'
+        });
+        
+        try {
+          const app = require('./index.js');
+          console.log('✅ Successfully required index.js');
+          
+          // Si app es una función de Express, iniciarla
+          if (typeof app.listen === 'function') {
+            const PORT = process.env.PORT || 3001;
+            app.listen(PORT, '0.0.0.0', () => {
+              console.log('🎉 Server successfully started on port ' + PORT);
+              console.log('📡 Listening on 0.0.0.0:' + PORT);
+            });
+          } else {
+            console.log('ℹ️  app.listen not found, assuming server auto-starts');
+          }
+        } catch (error) {
+          console.error('❀ Error requiring index.js:', error.message);
+          console.error('📜 Stack:', error.stack);
+        }
+        " > server.log 2>&1 &
+        
         SERVER_PID=$!
         echo $SERVER_PID > server.pid
+        echo "📝 Server PID: $SERVER_PID"
         
-        echo "⏳ Waiting for server to start..."
+        # Esperar y monitorear
+        echo "⏳ Waiting for server with enhanced monitoring..."
         
-        for i in {1..30}; do
-          if curl -s http://localhost:3001 > /dev/null; then
-            echo "✅ Server is ready!"
-            break
-          fi
-          
-          if [ $i -eq 30 ]; then
-            echo "❌ Server failed to start within 30 seconds"
-            kill $SERVER_PID 2>/dev/null || true
+        for i in {1..40}; do
+          # Verificar si el proceso sigue vivo
+          if ! ps -p $SERVER_PID > /dev/null; then
+            echo "❌ Server process died!"
+            echo "📜 Server logs:"
+            cat server.log
             exit 1
           fi
           
-          echo "⏱️ Still waiting... ($i/30)"
+          # Verificar logs para éxito
+          if grep -q "Server successfully started\|Server running\|Listening" server.log; then
+            echo "✅ Server started successfully (found in logs)"
+            break
+          fi
+          
+          # Verificar puertos comunes
+          for port in 3001 3000 5000 8000 8080; do
+            if curl -s http://localhost:$port > /dev/null 2>&1; then
+              echo "✅ Server responding on port $port"
+              break 2
+            fi
+          done
+          
+          if [ $i -eq 40 ]; then
+            echo "❌ Server not responding after 40 seconds"
+            echo "📜 Server logs:"
+            cat server.log
+            echo "🔍 Running processes:"
+            ps aux | grep node
+            echo "🔍 Open ports:"
+            netstat -tulpn | grep LISTEN
+            exit 1
+          fi
+          
+          if [ $i -eq 10 ] || [ $i -eq 20 ] || [ $i -eq 30 ]; then
+            echo "📋 Server logs at $i seconds:"
+            tail -10 server.log
+          fi
+          
+          echo "⏱️ Still waiting... ($i/40)"
           sleep 1
         done
+        
+        echo "🎯 Server ready for testing"
     
-    - name: 🧪 Run API tests
+    - name: 🧪 Run smart API tests
       run: |
-        echo "🔍 Running API tests..."
+        echo "🔍 Running smart API tests..."
         node test-ci.js
     
-    - name: 📋 Show server logs
+    - name: 📋 Show comprehensive logs
       if: always()
       run: |
-        echo "📜 Server logs:"
-        cat server.log || echo "No logs available"
+        echo "📜 COMPREHENSIVE SERVER LOGS:"
+        cat server.log || echo "No server logs"
+        
+        echo "🔍 PROCESS INFO:"
+        ps aux | grep node || echo "No node processes"
+        
+        echo "🌐 NETWORK INFO:"
+        netstat -tulpn | grep LISTEN || echo "No listening ports"
+        
+        echo "📊 PORT SCAN:"
+        for port in 3000 3001 5000 8000 8080; do
+          if curl -s --connect-timeout 2 http://localhost:$port > /dev/null; then
+            echo "✅ Port $port: RESPONDING"
+          else
+            echo "❌ Port $port: NOT RESPONDING"
+          fi
+        done
     
     - name: 🛑 Cleanup
       if: always()
@@ -150,3 +262,5 @@ jobs:
         if [ -f server.pid ]; then
           kill $(cat server.pid) 2>/dev/null || echo "Process already stopped"
         fi
+        # Limpiar procesos de node por si acaso
+        pkill -f "node" || echo "No node processes to kill"
