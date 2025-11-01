@@ -32,33 +32,32 @@ jobs:
     
     - name: 🔧 Add health check endpoint
       run: |
-        # Agregar un endpoint de health check simple
-        cat >> index.js << 'EOF'
-
-// Health check endpoint para GitHub Actions
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Casanova API Running',
-    timestamp: new Date().toISOString(),
-    database: 'Connected'
-  });
-});
-
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Bienvenido a Casanova API',
-    version: '1.0.0',
-    endpoints: {
-      users: '/casNov/api/getUsers',
-      inventarios: '/casNov/api/getInventarios',
-      leads: '/casNov/api/getLeads',
-      vendors: '/casNov/api/getVendors'
-    }
-  });
-});
-EOF
+        # Usar un método diferente para evitar problemas de YAML
+        {
+          echo "// Health check endpoint para GitHub Actions"
+          echo "app.get('/health', (req, res) => {"
+          echo "  res.json({ "
+          echo "    status: 'OK', "
+          echo "    message: 'Casanova API Running',"
+          echo "    timestamp: new Date().toISOString(),"
+          echo "    database: 'Connected'"
+          echo "  });"
+          echo "});"
+          echo ""
+          echo "// Root endpoint"
+          echo "app.get('/', (req, res) => {"
+          echo "  res.json({ "
+          echo "    message: 'Bienvenido a Casanova API',"
+          echo "    version: '1.0.0',"
+          echo "    endpoints: {"
+          echo "      users: '/casNov/api/getUsers',"
+          echo "      inventarios: '/casNov/api/getInventarios',"
+          echo "      leads: '/casNov/api/getLeads',"
+          echo "      vendors: '/casNov/api/getVendors'"
+          echo "    }"
+          echo "  });"
+          echo "});"
+        } >> index.js
     
     - name: 🧪 Create test script with correct routes
       run: |
