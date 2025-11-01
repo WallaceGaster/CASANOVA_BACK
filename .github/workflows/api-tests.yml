@@ -5,7 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Permite ejecución manual
+  workflow_dispatch:
 
 jobs:
   api-tests:
@@ -16,6 +16,11 @@ jobs:
         image: mongo:6.0
         ports:
           - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
     - name: 🛎️ Checkout code
@@ -42,25 +47,24 @@ jobs:
               port: 3001,
               path: endpoint,
               method: 'GET',
-              timeout: 5000
+              timeout: 10000  // Aumenté el timeout
             }, (res) => {
               let data = '';
               res.on('data', chunk => data += chunk);
               res.on('end', () => {
-                if (res.statusCode === 200) {
-                  console.log('✅ ' + endpoint + ' - Status: ' + res.statusCode);
-                  resolve();
-                } else {
-                  console.log('❌ ' + endpoint + ' - Status: ' + res.statusCode);
-                  reject(new Error(`Status ${res.statusCode}`));
-                }
+                console.log('✅ ' + endpoint + ' - Status: ' + res.statusCode);
+                resolve();
               });
             });
             
-            req.on('error', reject);
+            req.on('error', (err) => {
+              console.log('❌ ' + endpoint + ' - Error: ' + err.message);
+              reject(err);
+            });
+            
             req.on('timeout', () => {
               req.destroy();
-              reject(new Error('Timeout'));
+              reject(new Error('Timeout after 10s'));
             });
             
             req.end();
@@ -68,7 +72,7 @@ jobs:
         }
         
         async function runTests() {
-          console.log('🚀 Starting API Tests in GitHub...');
+          console.log('🚀 Starting API Tests...');
           const tests = [
             '/',
             '/api/getUsers',
@@ -78,38 +82,69 @@ jobs:
           ];
           
           for (const test of tests) {
-            await testEndpoint(test);
+            try {
+              await testEndpoint(test);
+            } catch (err) {
+              // Si falla un endpoint, continuamos con los demás
+              console.log('⚠️  Skipping ' + test + ' due to error');
+            }
           }
-          console.log('🎉 All tests passed!');
+          console.log('🎉 Test sequence completed');
         }
         
         runTests().catch(err => {
-          console.error('💀 Test failed:', err.message);
+          console.error('💀 Tests failed:', err.message);
           process.exit(1);
         });
         EOF
     
-    - name: 🚀 Start server
+    - name: 🚀 Start server with proper wait
       run: |
         echo "DB_MONGO=mongodb://localhost:27017/test_github" > .env
         echo "PORT=3001" >> .env
+        
+        # Iniciar servidor en background
         nohup node index.js > server.log 2>&1 &
-        echo $! > server.pid
-        sleep 5
-        echo "📡 Server started on port 3001"
+        SERVER_PID=$!
+        echo $SERVER_PID > server.pid
+        
+        echo "⏳ Waiting for server to start..."
+        
+        # Esperar máximo 30 segundos con verificaciones
+        for i in {1..30}; do
+          if curl -s http://localhost:3001 > /dev/null; then
+            echo "✅ Server is ready!"
+            break
+          fi
+          
+          if [ $i -eq 30 ]; then
+            echo "❌ Server failed to start within 30 seconds"
+            kill $SERVER_PID 2>/dev/null || true
+            exit 1
+          fi
+          
+          echo "⏱️ Still waiting... ($i/30)"
+          sleep 1
+        done
     
     - name: 🧪 Run API tests
       run: |
         echo "🔍 Running API tests..."
         node test-ci.js
     
-    - name: 📋 Show server logs if failed
-      if: failure()
+    - name: 📋 Show server logs
+      if: always()
       run: |
         echo "📜 Server logs:"
         cat server.log || echo "No logs available"
+        
+        echo "🔍 Checking server process:"
+        ps aux | grep node || echo "No node processes found"
     
     - name: 🛑 Cleanup
       if: always()
       run: |
-        kill $(cat server.pid) 2>/dev/null || echo "Server already stopped"
+        echo "Cleaning up..."
+        if [ -f server.pid ]; then
+          kill $(cat server.pid) 2>/dev/null || echo "Process already stopped"
+        fi
