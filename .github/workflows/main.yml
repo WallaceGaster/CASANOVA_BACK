@@ -6,30 +6,41 @@ on:
   pull_request:
     branches: [ main ]
 
+# Este flujo de trabajo se ejecuta automáticamente cuando hay un push o pull request
+# hacia las ramas "main" o "develop".
+
+# Se encarga de probar, auditar y preparar el backend Node.js para despliegue.
+
 jobs:
   test-backend:
     runs-on: ubuntu-latest
-    
+
+    # Primer trabajo: ejecuta pruebas y validaciones básicas del backend
     services:
       mongodb:
         image: mongo:6.0
         ports:
           - 27017:27017
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
     
-    - name: Setup Node.js
+    # Inicia un contenedor de MongoDB como servicio para que el backend
+    # pueda probar su conexión a base de datos.
+    steps:
+    - name: Obteniendo el codigo para el runner
+      uses: actions/checkout@v4
+    # Descarga el código del repositorio en el runner.
+    
+    - name: Configuracion de Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
         cache: 'npm'
+    # Configura el entorno con Node.js versión 18 y habilita cache para npm.
     
-    - name: Install dependencies
+    - name: Instalar dependencias
       run: npm install
+    # Instala todas las dependencias del proyecto.
     
-    - name: Verify project structure
+    - name: Verificar la estructura del proyecto
       run: |
         echo "🔍 Verificando estructura del proyecto..."
         [ -f "index.js" ] && echo "✅ index.js existe" || exit 1
@@ -37,18 +48,21 @@ jobs:
         [ -d "controllers" ] && echo "✅ controllers/ existe" || exit 1
         [ -d "models" ] && echo "✅ models/ existe" || exit 1
         [ -d "routes" ] && echo "✅ routes/ existe" || exit 1
-        echo "🎉 Estructura del proyecto OK!"
+        echo "🎉 Estructura del proyecto confirmada!"
+    # Revisa que la estructura básica del proyecto esté completa y correcta.
     
-    - name: Check JavaScript syntax
+    - name: Verificar la sintaxis de JavaScript
       run: |
         echo "📝 Verificando sintaxis JavaScript..."
         node -c index.js
         find controllers/ -name "*.js" -exec node -c {} \;
         find models/ -name "*.js" -exec node -c {} \;
         find routes/ -name "*.js" -exec node -c {} \;
-        echo "✅ Sintaxis JavaScript OK!"
+        echo "✅ Sintaxis JavaScript confirmada!"
+    # Analiza la sintaxis de todos los archivos .js del backend sin ejecutarlos,
+    # asegurando que no haya errores de sintaxis.
     
-    - name: Test MongoDB connection
+    - name: Prueba de la conexión a la base de datos MongoDB
       run: |
         echo "🗄️ Probando conexión a MongoDB..."
         node -e "
@@ -67,25 +81,37 @@ jobs:
           process.exit(1);
         });
         "
+# Ejecuta un script de Node.js para probar que la base de datos MongoDB
+# levantada como servicio sea accesible y funcional.
     
-    - name: Security audit (warning only)
+    - name: Analisis de seguridades (Advertencias)
       run: npm audit --audit-level high || echo "⚠️ Vulnerabilidades encontradas, pero continuando..."
+# Realiza un análisis de vulnerabilidades de seguridad en las dependencias,
+# no detiene el flujo si encuentra algo, directamente continuara mostrando las advertencias.
 
   deployment-package:
     runs-on: ubuntu-latest
     needs: test-backend
+
+    # Segundo job: se ejecuta solo si el primero (test-backend) pasó correctamente.
+    # Este preparara un nuevo paquete para su despliegue.
     
     steps:
     - uses: actions/checkout@v4
+    # Descarga nuevamente el código fuente.
     
-    - name: Create deployment package
+    - name: Creando paquete de despliegue
       run: |
         echo "📦 Creando paquete de deployment..."
         mkdir -p deployment
         cp -r controllers models routes config *.js package.json deployment/
         echo "✅ Paquete creado exitosamente"
+    # Crea una carpeta "deployment" y copia dentro los archivos y directorios
+    # esenciales para desplegar el backend (SIN INCLUIR LAS DEPENDENCIAS).
         
-    - name: Show package contents
+    - name: Contenido del paquete
       run: |
         echo "📁 Contenido del paquete:"
         find deployment -type f -name "*.js" | head -10
+    # Muestra los archivos del paquete de despliegue para confirmar
+    # que la estructura es la esperada.
