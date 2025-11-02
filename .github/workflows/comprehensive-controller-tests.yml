@@ -369,14 +369,14 @@ jobs:
           await testEndpoint('/', 'GET', 'Root endpoint');
           
           // Test main API endpoints
-          await testEndpoint('/casNov/api/getUsers', 'GET', 'Get all users');
-          await testEndpoint('/casNov/api/getVendors', 'GET', 'Get vendors');
-          await testEndpoint('/casNov/api/getLeads', 'GET', 'Get all leads');
-          await testEndpoint('/casNov/api/getInventarios', 'GET', 'Get all inventory');
-          await testEndpoint('/casNov/api/getInventariosDisponibles', 'GET', 'Get available inventory');
-          await testEndpoint('/casNov/api/getMapas', 'GET', 'Get all maps');
-          await testEndpoint('/casNov/api/getReportes', 'GET', 'Get all reports');
-          await testEndpoint('/casNov/api/getPronosticos', 'GET', 'Get forecasts');
+          await testEndpoint('/casNov/getUsers', 'GET', 'Get all users');
+          await testEndpoint('/casNov/getVendors', 'GET', 'Get vendors');
+          await testEndpoint('/casNov/getLeads', 'GET', 'Get all leads');
+          await testEndpoint('/casNov/getInventarios', 'GET', 'Get all inventory');
+          await testEndpoint('/casNov/getInventariosDisponibles', 'GET', 'Get available inventory');
+          await testEndpoint('/casNov/getMapas', 'GET', 'Get all maps');
+          await testEndpoint('/casNov/getReportes', 'GET', 'Get all reports');
+          await testEndpoint('/casNov/getPronosticos', 'GET', 'Get forecasts');
           
           console.log('\\n📊 Test Summary:');
           console.log('   ✅ Passed: ' + testsPassed);
