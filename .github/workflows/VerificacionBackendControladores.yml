@@ -359,10 +359,10 @@ jobs:
               res.on('end', () => {
                 if (res.statusCode === 200) {
                   testsPassed++;
-                  console.log('✅ ' + endpoint + ' - ' + Descripcion + ' (Status: ' + res.statusCode + ')');
+                  console.log('✅ ' + endpoint + ' - ' + description + ' (Status: ' + res.statusCode + ')');
                 } else {
                   testsFailed++;
-                  console.log('⚠️ ' + endpoint + ' - ' + Descripcion + ' (Status: ' + res.statusCode + ')');
+                  console.log('⚠️ ' + endpoint + ' - ' + description + ' (Status: ' + res.statusCode + ')');
                 }
                 resolve();
               });
@@ -370,13 +370,13 @@ jobs:
 
             req.on('error', (error) => {
               testsFailed++;
-              console.log('❌ ' + endpoint + ' - ' + Descripcion + ' (Error: ' + error.message + ')');
+              console.log('❌ ' + endpoint + ' - ' + description + ' (Error: ' + error.message + ')');
               resolve();
             });
 
             req.on('timeout', () => {
               testsFailed++;
-              console.log('❌ ' + endpoint + ' - ' + Descripcion + ' (Timeout)');
+              console.log('❌ ' + endpoint + ' - ' + description + ' (Timeout)');
               req.destroy();
               resolve();
             });
