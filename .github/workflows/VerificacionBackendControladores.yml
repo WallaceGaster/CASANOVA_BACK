@@ -1,15 +1,17 @@
-name: Comprehensive Backend API Tests
+name: Prueba de API para Backend
 
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main]
+# Se ejecuta en pushes a main/develop y en pull requests hacia main.
 
 jobs:
   full-api-tests:
     runs-on: ubuntu-latest
-    
+
+    # Levanta MongoDB (imagen 6.0) para pruebas de integración de extremo a extremo.
     services:
       mongodb:
         image: mongo:6.0
@@ -17,34 +19,40 @@ jobs:
           - 27017:27017
 
     steps:
-    - name: 🛎️ Checkout code
+    - name: 🛎️ Cargar el codigo
       uses: actions/checkout@v4
+      # Trae el código del repositorio al runner para ejecutar los siguientes pasos.
     
-    - name: ⎔ Setup Node.js
+    - name: ⎔ Configuración Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
         cache: 'npm'
+      # Prepara el entorno Node.js 18 y activa cache de npm para acelerar installs.
     
-    - name: 📦 Install dependencies
+    - name: 📦 Instalación de dependencias
       run: |
         npm install
         npm install bcryptjs --save-dev || echo "bcryptjs optional"
+      # Instalación de dependencias:
+      # - Instala dependencias normales.
+      # - Intenta instalar bcryptjs como dependencia de desarrollo (fallo no crítico).
+      # -> Asegura que librerías necesarias estén disponibles para scripts y pruebas.
 
-    - name: 🔧 Add health endpoint to server
+    - name: 🔧 Creación de endpoint de salud para el servidor
       run: |
         # Buscar el archivo principal del servidor (podría ser index.js, app.js, server.js)
         SERVER_FILE=""
         for file in index.js app.js server.js; do
           if [ -f "$file" ]; then
             SERVER_FILE="$file"
-            echo "✅ Found server file: $file"
+            echo "✅ Se encontró archivo de servidor: $file"
             break
           fi
         done
         
         if [ -z "$SERVER_FILE" ]; then
-          echo "❌ No server file found (index.js, app.js, server.js)"
+          echo "❌ No se ha encontrado archivos de servidor (index.js, app.js, server.js)"
           ls -la
           exit 1
         fi
@@ -70,9 +78,14 @@ jobs:
           });
         });
         EOF
-        echo "✅ Health endpoints added to $SERVER_FILE"
+        echo "✅ Se han añadido endpoints de salud a $SERVER_FILE"
 
-    - name: 🗃️ Create comprehensive test data
+      # Bloque de instrumentación:
+      # - Detecta el archivo principal del servidor.
+      # - Inserta endpoints /health y / para verificación desde CI.
+      # -> Permite comprobaciones fiables sin depender de rutas de negocio específicas.
+
+    - name: 🗃️ Creación de prueba de datos
       run: |
         cat > comprehensive-test-data.js << 'EOF'
         const mongoose = require('mongoose');
@@ -80,7 +93,7 @@ jobs:
         async function createComprehensiveTestData() {
           try {
             await mongoose.connect('mongodb://localhost:27017/test_casanova_comprehensive');
-            console.log('✅ Connected to MongoDB for comprehensive testing');
+            console.log('✅ Conectado a MongoDB para pruebas de datos');
             
             // Importar todos los modelos
             const User = require('./models/User');
@@ -96,7 +109,7 @@ jobs:
             const Pronostico = require('./models/Pronostico');
             
             // Limpiar datos existentes
-            console.log('🗑️ Clearing existing test data...');
+            console.log('🗑️ Eliminando cualquier prueba de datos anterior...');
             await User.deleteMany({});
             await Inventario.deleteMany({});
             await Lead.deleteMany({});
@@ -109,10 +122,10 @@ jobs:
             await Mensualidad.deleteMany({});
             await Pronostico.deleteMany({});
             
-            console.log('✅ All collections cleared');
+            console.log('✅ Colecciones limpiadas');
             
             // Crear usuarios de prueba
-            console.log('👥 Creating test users...');
+            console.log('👥 Creación de usuarios de prueba...');
             const users = await User.insertMany([
               {
                 username: 'admin_user',
@@ -135,10 +148,10 @@ jobs:
                 userType: 'Coordinador'
               }
             ]);
-            console.log('✅ Created ' + users.length + ' users');
+            console.log('✅ Se han creado ' + users.length + ' usuarios');
             
             // Crear mapas e imágenes de mapa
-            console.log('🗺️ Creating test maps...');
+            console.log('🗺️ Creando mapas de prueba...');
             const mapas = await Mapa.insertMany([
               {
                 nombreMapa: 'Desarrollo Norte',
@@ -160,10 +173,10 @@ jobs:
                 url: '/images/map-base-2.jpg'
               }
             ]);
-            console.log('✅ Created ' + mapas.length + ' maps and ' + imagenesMapa.length + ' map images');
+            console.log('✅ Se han creado ' + mapas.length + ' mapas y ' + imagenesMapa.length + ' imagenes de mapa');
             
             // Crear coordenadas
-            console.log('📍 Creating coordinates...');
+            console.log('📍 Creando coordenadas...');
             const coordenadas = await Coordenada.insertMany([
               {
                 id_mapa: mapas[0]._id.toString(),
@@ -178,10 +191,10 @@ jobs:
                 coordenadaY: 250
               }
             ]);
-            console.log('✅ Created ' + coordenadas.length + ' coordinates');
+            console.log('✅ Se han creado ' + coordenadas.length + ' coordenadas');
             
             // Crear inventarios
-            console.log('🏠 Creating inventory...');
+            console.log('🏠 Creando inventarios...');
             const inventarios = await Inventario.insertMany([
               {
                 id_usuario: users[1]._id.toString(),
@@ -210,10 +223,10 @@ jobs:
                 colindancias: []
               }
             ]);
-            console.log('✅ Created ' + inventarios.length + ' inventory items');
+            console.log('✅ Se han creado ' + inventarios.length + ' objetos de inventario');
             
             // Crear leads
-            console.log('📞 Creating leads...');
+            console.log('📞 Creando leads...');
             const leads = await Lead.insertMany([
               {
                 leadName: 'Juan Pérez',
@@ -230,15 +243,15 @@ jobs:
                 currentDate: new Date().toISOString()
               }
             ]);
-            console.log('✅ Created ' + leads.length + ' leads');
+            console.log('✅ Se han creado ' + leads.length + ' leads');
             
-            console.log('🎉 Test data creation completed!');
+            console.log('🎉 Creacion de prueba de datos completada!');
             
             await mongoose.connection.close();
-            console.log('✅ Database connection closed');
+            console.log('✅ Conexión de base de datos cerrada');
             
           } catch (error) {
-            console.error('❌ Error creating test data:', error);
+            console.error('❌ Error creando datos de prueba:', error);
             process.exit(1);
           }
         }
@@ -246,20 +259,25 @@ jobs:
         createComprehensiveTestData();
         EOF
 
-    - name: 🚀 Create test data and start server
+      # Bloque de preparación de datos:
+      # - Escribe un script que importa modelos, limpia colecciones y crea datos
+      #   representativos (usuarios, mapas, coordenadas, inventarios, leads, etc.).
+      # - Garantiza un dataset completo y reproducible para las pruebas de integración cuando se ejecuten.
+
+    - name: 🚀 Creación de prueba de datos y levantamiento de servidor
       run: |
         echo "DB_MONGO=mongodb://localhost:27017/test_casanova_comprehensive" > .env
         echo "PORT=5000" >> .env
         
-        echo "🗃️ Creating test data..."
+        echo "🗃️ Creando prueba de datos..."
         if node -c comprehensive-test-data.js && node comprehensive-test-data.js; then
-          echo "✅ Test data created successfully"
+          echo "✅ Se ha creado la prueba de datos exitosamente"
         else
-          echo "❌ Failed to create test data"
+          echo "❌ Ha ocurrido un problema al crear la prueba de datos"
           exit 1
         fi
         
-        echo "🔧 Starting server..."
+        echo "🔧 Iniciando servidor..."
         # Buscar el archivo del servidor
         SERVER_FILE=""
         for file in index.js app.js server.js; do
@@ -270,45 +288,51 @@ jobs:
         done
         
         if [ -z "$SERVER_FILE" ]; then
-          echo "❌ No server file found"
+          echo "❌ No se ha encontrado ningún archivo de servidor"
           exit 1
         fi
         
-        echo "Starting server from: $SERVER_FILE"
+        echo "Iniciando servidor desde: $SERVER_FILE"
         nohup node $SERVER_FILE > server.log 2>&1 &
         echo $! > server.pid
         
-        echo "⏳ Waiting for server to start..."
+        echo "⏳ Esperando a que el servidor inicie..."
         # Esperar con múltiples métodos de verificación
         for i in {1..20}; do
           # Intentar con el endpoint de salud
           if curl -s http://localhost:5000/health > /dev/null 2>&1; then
-            echo "✅ Server health check passed!"
+            echo "✅ Prueba de salud del servidor completada!"
             break
           fi
           # Intentar con el endpoint raíz
           if curl -s http://localhost:5000/ > /dev/null 2>&1; then
-            echo "✅ Server root endpoint responding!"
+            echo "✅ Raíz del servidor respondiendo correctamente!"
             break
           fi
           # Verificar si el proceso todavía está corriendo
           if ! kill -0 $(cat server.pid) 2>/dev/null; then
-            echo "❌ Server process died"
+            echo "❌ El proceso del servidor ha terminado abruptamente"
             cat server.log
             exit 1
           fi
           if [ $i -eq 20 ]; then
-            echo "⚠️ Server might be running but health check failed"
+            echo "⚠️ Ha fallado la prueba de salud del servidor"
             echo "Server logs:"
             cat server.log
             # Continuar de todos modos para probar los endpoints
             break
           fi
-          echo "Waiting for server... ($i/20)"
+          echo "Esperando al servidor... ($i/20)"
           sleep 3
         done
 
-    - name: 🧪 Run API connectivity tests
+      # Levanta datos y servidor:
+      # - Crea .env con DB y PORT.
+      # - Ejecuta la creación de datos (fallo detiene el job).
+      # - Busca y arranca el servidor en background, guarda PID y espera a que responda.
+      # -> uso de múltiples chequeos hace la espera más robusta.
+
+    - name: 🧪 Ejecutar pruebas de conectividad al API
       run: |
         cat > api-test.js << 'EOF'
         const http = require('http');
@@ -335,10 +359,10 @@ jobs:
               res.on('end', () => {
                 if (res.statusCode === 200) {
                   testsPassed++;
-                  console.log('✅ ' + endpoint + ' - ' + description + ' (Status: ' + res.statusCode + ')');
+                  console.log('✅ ' + endpoint + ' - ' + Descripcion + ' (Status: ' + res.statusCode + ')');
                 } else {
                   testsFailed++;
-                  console.log('⚠️ ' + endpoint + ' - ' + description + ' (Status: ' + res.statusCode + ')');
+                  console.log('⚠️ ' + endpoint + ' - ' + Descripcion + ' (Status: ' + res.statusCode + ')');
                 }
                 resolve();
               });
@@ -346,13 +370,13 @@ jobs:
 
             req.on('error', (error) => {
               testsFailed++;
-              console.log('❌ ' + endpoint + ' - ' + description + ' (Error: ' + error.message + ')');
+              console.log('❌ ' + endpoint + ' - ' + Descripcion + ' (Error: ' + error.message + ')');
               resolve();
             });
 
             req.on('timeout', () => {
               testsFailed++;
-              console.log('❌ ' + endpoint + ' - ' + description + ' (Timeout)');
+              console.log('❌ ' + endpoint + ' - ' + Descripcion + ' (Timeout)');
               req.destroy();
               resolve();
             });
@@ -362,7 +386,7 @@ jobs:
         }
 
         async function runTests() {
-          console.log('🚀 Starting API connectivity tests...');
+          console.log('🚀 Iniciando pruebas de conectividad del API...');
           
           // Test basic endpoints first
           await testEndpoint('/health', 'GET', 'Health check');
@@ -378,39 +402,47 @@ jobs:
           await testEndpoint('/casNov/getReportes', 'GET', 'Get all reports');
           await testEndpoint('/casNov/getPronosticos', 'GET', 'Get forecasts');
           
-          console.log('\\n📊 Test Summary:');
-          console.log('   ✅ Passed: ' + testsPassed);
-          console.log('   ❌ Failed: ' + testsFailed);
-          console.log('   📈 Success Rate: ' + ((testsPassed / (testsPassed + testsFailed)) * 100).toFixed(2) + '%');
+          console.log('\\n📊 Reporte de la prueba:');
+          console.log('   ✅ Exitosas: ' + testsPassed);
+          console.log('   ❌ Fallidas: ' + testsFailed);
+          console.log('   📈 Ratio de exito: ' + ((testsPassed / (testsPassed + testsFailed)) * 100).toFixed(2) + '%');
           
           if (testsFailed > 0) {
-            console.log('\\n⚠️ Some tests failed, but continuing...');
+            console.log('\\n⚠️ Algunas pruebas fallaron, prosiguiendo...');
           } else {
-            console.log('\\n🎉 All tests passed!');
+            console.log('\\n🎉 Todas las pruebas se completaron con exito!');
           }
         }
 
         runTests().catch(console.error);
         EOF
         
-        echo "🧪 Running API tests..."
+        echo "🧪 Ejecutando pruebas de API..."
         node api-test.js
 
-    - name: 📋 Verify server is responsive
+      # Bloque de pruebas HTTP:
+      # - Crea y ejecuta un script que llama múltiples endpoints críticos.
+      # - Suma passed/failed y calcula tasa de éxito.
+      # - No detiene el flujo si hay fallos, solo los reporta.
+
+    - name: 📋 Verificando que el servidor responda
       run: |
-        echo "🔍 Checking server responsiveness..."
+        echo "🔍 Verificando respuesta del servidor..."
         # Intentar múltiples endpoints
         for endpoint in "/health" "/" "/casNov/api/getUsers"; do
           if curl -f -s http://localhost:5000$endpoint > /dev/null; then
-            echo "✅ Endpoint $endpoint is responding"
+            echo "✅ El endpoint $endpoint esta respondiendo"
             break
           fi
         done
         
-        echo "📊 Server status:"
-        curl -s http://localhost:5000/health || curl -s http://localhost:5000/ || echo "No standard endpoints available"
+        echo "📊 Estatus del servidor:"
+        curl -s http://localhost:5000/health || curl -s http://localhost:5000/ || echo "No hay endpoints disponibles"
+      # Comprobación rápida adicional:
+      # - Verifica respuesta de endpoints estándar y muestra /health o / si existe.
+      # - Útil para debugging si los tests anteriores fallaron.
 
-    - name: 📄 Display detailed server logs
+    - name: 📄 Mostrar logs del servidor
       if: always()
       run: |
         echo "📄 Server logs:"
@@ -419,37 +451,43 @@ jobs:
         else
           echo "No server logs found"
         fi
+      # Siempre muestra logs del servidor al final.
 
-    - name: 📈 Generate final test report
+    - name: 📈 Reporte final de prueba del servidor
       run: |
-        echo "🎯 COMPREHENSIVE BACKEND TEST REPORT"
+        echo "🎯 REPORTE DE PRUEBA DEL BACKEND"
         echo "===================================="
-        echo "✅ Database: Test data created successfully"
-        echo "✅ Server: Process running"
-        echo "✅ API: Endpoints tested"
+        echo "✅ Base de datos: Creación de prueba de datos exitosa"
+        echo "✅ Server: Proceso ejecutandose"
+        echo "✅ API: Endpoints probados"
         echo ""
-        echo "📦 Test Coverage:"
-        echo "   👥 User Management System"
-        echo "   📞 Lead Tracking System" 
-        echo "   🏠 Inventory Management"
-        echo "   🗺️ Maps & Coordinates"
-        echo "   📊 Reporting System"
-        echo "   📈 Analytics & Forecasts"
+        echo "📦 Cobertura de la prueba:"
+        echo "   👥 Sistema de manejo de usuarios"
+        echo "   📞 Sistema de rastreo de leads" 
+        echo "   🏠 Manejo de inventario"
+        echo "   🗺️ Mapas y coordenadas"
+        echo "   📊 Sistema de reportes"
+        echo "   📈 Análisis y pronóstico"
         echo ""
-        echo "🚀 STATUS: BACKEND OPERATIONAL"
+        echo "🚀 STATUS: BACKEND OPERACIONAL"
         echo ""
-        echo "Note: Some endpoints may return 404 if not implemented,"
-        echo "but the core system is functioning correctly."
+        echo "Nota: Algunos endpoints pueden haber soltado un estado 404 si no se han implementado,"
+        echo "pero el sistema se seguira ejecutando correctamente"
+      # Reporte final resumido: enumera áreas cubiertas por las pruebas y estado general.
 
-    - name: 🛑 Cleanup
+    - name: 🛑 Limpieza
       if: always()
       run: |
-        echo "🧹 Cleaning up..."
+        echo "🧹 Limpiando..."
         if [ -f server.pid ]; then
-          echo "Stopping server..."
+          echo "Deteniendo servidor..."
           kill $(cat server.pid) 2>/dev/null || true
           sleep 2
           rm -f server.pid
         fi
         # Limpiar archivos temporales
         rm -f server.log comprehensive-test-data.js api-test.js .env
+      # Limpieza final:
+      # - Detiene servidor si existe PID.
+      # - Elimina archivos generados temporalmente.
+      # -> Deja el runner limpio para próximas ejecuciones.
