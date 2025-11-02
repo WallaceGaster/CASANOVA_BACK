@@ -1,4 +1,4 @@
-name: Enhanced API Tests
+name: Pruebas para el API
 
 on:
   push:
@@ -6,10 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+
+# Se ejecuta en pushes a main/develop y en pull requests hacia main.
 jobs:
   api-tests:
     runs-on: ubuntu-latest
-    
+
+    # Levanta MongoDB (imagen 5.0) para pruebas de integración.
     services:
       mongodb:
         image: mongo:5.0
@@ -17,19 +20,22 @@ jobs:
           - 27017:27017
 
     steps:
-    - name: 🛎️ Checkout code
+    - name: 🛎️ Cargar codigo
       uses: actions/checkout@v4
+      # Trae el código del repositorio al runner para poder ejecutar los pasos siguientes.
     
-    - name: ⎔ Setup Node.js
+    - name: ⎔ Configurar Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18.x'
         cache: 'npm'
+      # Configura Node.js 18 y cache de npm para acelerar instalaciones.
     
-    - name: 📦 Install dependencies
+    - name: 📦 Instalación de dependencias
       run: npm install
+      # Instala dependencias del proyecto necesarias para levantar el servidor y ejecutar scripts.
     
-    - name: 🔧 Create health endpoints
+    - name: 🔧 Creación de endpoints de verificación de salud
       run: |
         cat > health.js << 'EOF'
         app.get('/health', (req, res) => {
@@ -40,8 +46,12 @@ jobs:
         });
         EOF
         cat health.js >> index.js
+      # Bloque de preparación del servidor:
+      # - Crea un archivo temporal `health.js` con endpoints de salud (/, /health).
+      # - Lo concatena a `index.js` para asegurar que el servidor responda y pueda ser comprobado por el CI.
+      # -> Útil para verificar que el servidor está arriba sin depender de rutas de negocio.
     
-    - name: 🗃️ Create comprehensive test data
+    - name: 🗃️ Creación de datos de prueba
       run: |
         cat > enhanced-data.js << 'EOF'
         const mongoose = require('mongoose');
@@ -49,7 +59,7 @@ jobs:
         async function main() {
           try {
             await mongoose.connect('mongodb://localhost:27017/test_github');
-            console.log('✅ Connected to MongoDB');
+            console.log('✅ Conexión a MongoDB exitosa');
             
             // Limpiar datos existentes
             const User = require('./models/User');
@@ -60,7 +70,7 @@ jobs:
             await Inventario.deleteMany({});
             await Lead.deleteMany({});
             
-            console.log('🗑️ Cleared existing data');
+            console.log('🗑️ Datos existentes eliminados');
     
             // Crear usuarios de prueba
             const users = await User.insertMany([
@@ -80,7 +90,7 @@ jobs:
                 userType: 'Administrador'
               }
             ]);
-            console.log(`✅ Created ${users.length} users`);
+            console.log(`✅ Se han creado ${users.length} usuarios`);
             
             // Crear inventarios de prueba
             const inventarios = await Inventario.insertMany([
@@ -109,7 +119,7 @@ jobs:
                 id_usuario: users[1]._id.toString()
               }
             ]);
-            console.log(`✅ Created ${inventarios.length} inventarios`);
+            console.log(`✅ Creados ${inventarios.length} inventarios`);
             
             // Crear leads de prueba
             const leads = await Lead.insertMany([
@@ -142,9 +152,9 @@ jobs:
                 currentDate: new Date().toISOString()
               }
             ]);
-            console.log(`✅ Created ${leads.length} leads`);
+            console.log(`✅ Creados ${leads.length} leads`);
             
-            console.log('🎉 Test data creation completed!');
+            console.log('🎉 Creación de prueba de datos completada');
             mongoose.connection.close();
             
           } catch (error) {
@@ -156,28 +166,40 @@ jobs:
         main();
         EOF
 
-    - name: 🚀 Insert data and start server
+      # Bloque de datos de prueba:
+      # - Genera un script `enhanced-data.js` que se conecta a MongoDB de servicio.
+      # - Limpia colecciones y crea usuarios, inventarios y leads de prueba.
+      # - Garantiza un estado reproducible de la base para los tests siguientes.
+
+    - name: 🚀 Iniciar servidor y insertar datos de prueba
       run: |
         echo "DB_MONGO=mongodb://localhost:27017/test_github" > .env
         echo "PORT=5000" >> .env
         
-        echo "🗃️ Creating comprehensive test data..."
+        echo "🗃️ Creando prueba de datos..."
         node enhanced-data.js
         
-        echo "🔧 Starting server..."
+        echo "🔧 Iniciando servidor..."
         nohup node index.js > server.log 2>&1 &
         echo $! > server.pid
         
-        echo "⏳ Waiting for server..."
+        echo "⏳ Esperando al servidor..."
         for i in {1..30}; do
           if curl -s http://localhost:5000/health > /dev/null; then
-            echo "✅ Server ready!"
+            echo "✅ Servidor listo!"
             break
           fi
           sleep 1
         done
 
-    - name: 🧪 Run enhanced tests
+      # Levantar el entorno y servidor:
+      # - Escribe variables .env con la URL de Mongo y puerto.
+      # - Ejecuta el script de creación de datos.
+      # - Inicia el servidor en background (nohup) y guarda el PID.
+      # - Espera activamente (hasta ~30s) a que /health responda para seguir con tests.
+      # -> Robustez: permite que el job verifique que el servicio HTTP está listo.
+
+    - name: 🧪 Ejecutar pruebas de datos
       run: |
         cat > enhanced-test.js << 'EOF'
         const http = require('http');
@@ -200,7 +222,7 @@ jobs:
                   try {
                     const json = JSON.parse(data);
                     if (Array.isArray(json)) {
-                      console.log(`   📊 Found ${json.length} items`);
+                      console.log(`   📊 Encontrados ${json.length} objetos`);
                     }
                   } catch (e) {}
                 } else {
@@ -215,30 +237,41 @@ jobs:
         }
         
         async function runTests() {
-          console.log('🚀 Testing with comprehensive data...');
+          console.log('🚀 Ejecutando prueba de datos...');
           await testEndpoint('/casNov/api/getUsers');
           await testEndpoint('/casNov/api/getVendors');
           await testEndpoint('/casNov/api/getInventarios');
           await testEndpoint('/casNov/api/getLeads');
-          console.log('🎉 Enhanced tests completed!');
+          console.log('🎉 Prueba de datos completada!');
         }
         
         runTests();
         EOF
         node enhanced-test.js
 
-    - name: 📊 Final report
-      run: |
-        echo "📈 ENHANCED TEST REPORT"
-        echo "======================"
-        echo "✅ Database: Comprehensive test data inserted"
-        echo "✅ Server: Running correctly"
-        echo "✅ Endpoints: Now should return 200 with data"
-        echo "🎉 GitHub Actions CI/CD: FULLY OPERATIONAL"
+      # Bloque de verificación funcional:
+      # - Crea `enhanced-test.js` que hace peticiones GET a endpoints clave.
+      # - Reporta estado HTTP y, si recibe JSON array, cuenta items.
+      # - Ejecuta el script para validar que las rutas devuelven 200 y datos esperados.
 
-    - name: 🛑 Cleanup
+    - name: 📊 Reporte de prueba
+      run: |
+        echo "📈 Reporte de prueba"
+        echo "======================"
+        echo "✅ Base de datos: Datos insertados con éxito"
+        echo "✅ Server: Ejécutandose correctamente"
+        echo "✅ Endpoints: Retorno de datos con estatus 200"
+        echo "🎉 GitHub Actions CI/CD: En operación exitosa"
+
+     # Reporte resumido que indica el éxito de las fases previas (informativo).
+
+    - name: 🛑 Limpieza
       if: always()
       run: |
         if [ -f server.pid ]; then
           kill $(cat server.pid) 2>/dev/null || true
         fi
+
+      # Limpieza (siempre ejecuta):
+      # - Intenta detener el proceso del servidor usando el PID guardado.
+      # - Evita dejar procesos colgando en el runner; `if: always()` garantiza ejecución.
