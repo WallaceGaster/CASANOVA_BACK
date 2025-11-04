@@ -1,4 +1,9 @@
 const Lead = require('../models/Lead');
+const multer = require('multer');
+const emailController = require('./emailController');
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // ALTA LEADS 
 
@@ -570,3 +575,31 @@ exports.getLeadById = async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
+
+exports.uploadContrato = [upload.single('file'), async (req, res) => {
+  try {
+    const { leadId, message, filename } = req.body;
+    const lead = await Lead.findById(leadId);
+
+    if (!lead) {
+      return res.status(404).json({ message: 'Lead no encontrado' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No se subió ningún archivo' });
+    }
+
+    await emailController.sendContractEmail(
+      lead.leadEmail,
+      'Contrato de CasaNova',
+      message,
+      req.file.buffer,
+      filename
+    );
+
+    res.status(200).json({ message: 'Correo enviado con éxito' });
+  } catch (error) {
+    console.error('Error al enviar el correo:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+}];
