@@ -112,6 +112,7 @@ router.post('/setApartado',leadController.setApartado);
 router.post('/popApartado',leadController.popApartado);
 
 router.get('/getLead/:id', leadController.getLeadById);
+router.post('/leads/upload-contrato', leadController.uploadContrato);
 
 router.post('/addMensualidad',mensualidadController.addMensualidad);
 router.post('/borrarPorIdCotizacion',mensualidadController.borrarPorIdCotizacion);
