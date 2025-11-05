@@ -1,19 +1,33 @@
 const Mapa = require("../models/Mapa");
 
 
-
-exports.addMapa = async(req,res)=>{
-    try{
-        let mapa;
-        mapa = new Mapa(req.body);
-        await mapa.save();
-        res.send(mapa);
-
+// imagenMapaController.js
+exports.addMapa = async (req, res) => {
+  try {
+    console.log("Recibiendo mapa:", req.body.nombreMapa);
+    
+    if (!req.body.urlMapa) {
+      return res.status(400).json({ error: 'No se proporcionó ninguna imagen' });
     }
-    catch(error){
-        console.log("Hubo un problema",error);
-    }
-} 
+
+    let mapa = new Mapa({
+      nombreMapa: req.body.nombreMapa,
+      urlMapa: req.body.urlMapa, // base64 directo
+      coordenadas: []
+    });
+
+    await mapa.save();
+    res.send(mapa);
+
+  } catch (error) {
+    console.log("Hubo un problema", error);
+    res.status(500).json({ 
+      error: "Error al guardar el mapa",
+      detalle: error.message 
+    });
+  }
+};
+
 
 
 
@@ -46,12 +60,12 @@ exports.getMapas = async(req,res) =>{
 
 
 exports.assignCoordenadas = async (req, res) => {
-    const { nombreMapa, coordenadasArray } = req.body; // Suponiendo que los datos vienen en el cuerpo de la solicitud
+    const { idmapa, coordenadasArray } = req.body; // Suponiendo que los datos vienen en el cuerpo de la solicitud
     
     try {
-        console.log(nombreMapa,"Nombre del mapa");
+        console.log(idmapa,"id mapa");
         // Actualizar el inventario con las nuevas colindancias
-        const mapaActualizado = await Mapa.findByIdAndUpdate(nombreMapa, { coordenadas: coordenadasArray }, { new: true });
+        const mapaActualizado = await Mapa.findByIdAndUpdate(idmapa, { coordenadas: coordenadasArray }, { new: true });
 
         if (!mapaActualizado) {
             return res.status(404).json({ error: 'Mapa no encontrado' });

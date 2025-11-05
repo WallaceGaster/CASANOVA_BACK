@@ -1,7 +1,7 @@
 const Coordenada = require("../models/Coordenadas");
 
-exports.addCoordenada = async(req,res)=>{
-    try{
+exports.addCoordenada = async (req, res) => {
+    try {
         let coordenada;
         // console.log(req.body,"Info");
         coordenadas = new Coordenada(req.body);
@@ -9,10 +9,10 @@ exports.addCoordenada = async(req,res)=>{
         res.json(coordenadas);
 
     }
-    catch(error){
-        console.log("Hubo un problema",error);
+    catch (error) {
+        console.log("Hubo un problema", error);
     }
-} 
+}
 
 // OBTIENE TODAS LAS COORDENADAS DE UN MAPA
 
@@ -59,7 +59,7 @@ exports.buscarCoordenadaPorId = async (req, res) => {
         return res.status(200).json(coordenada);
     } catch (error) {
         console.error('Error al buscar coordenada por ID:', error);
-       return res.status(500).json({ mensaje: 'Error interno del servidor' });
+        return res.status(500).json({ mensaje: 'Error interno del servidor' });
     }
 };
 // BUSCAR POR ID Y PONER NOMBRE
