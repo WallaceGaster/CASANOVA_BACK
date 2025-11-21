@@ -1,15 +1,18 @@
 const User = require("../models/User");
+const { encrypt, decrypt } = require('../utils/encryption');
 
 // ALTAS USUARIOS
 exports.addUser = async(req,res) =>{
     try{
-        let user;
-        user = new User(req.body);
+        const { username, password, userType } = req.body;
+        const encryptedPassword = encrypt(password);
+        const user = new User({ username, password: encryptedPassword, userType });
         await user.save();
         res.send(user);
     }
     catch(error){
-        console.log("Hubo un problema");
+        console.log("Hubo un problema", error);
+        res.status(500).send('Hubo un error');
     }
 }
 
@@ -58,12 +61,17 @@ exports.getUserById = async(req,res) => {
 exports.authUser = async(req,res)=> {
     const {username,password} = req.body;
     try{
-        const user = await User.findOne({username,password});
+        const user = await User.findOne({username});
         if(!user){
-            res.status(404).json({msg:'No existe el usuario'});
+            return res.status(404).json({msg:'No existe el usuario'});
         }
-        else{
-            res.json(user)
+
+        const decryptedPassword = decrypt(user.password);
+
+        if (password === decryptedPassword) {
+            res.json(user);
+        } else {
+            res.status(401).json({msg:'Contraseña incorrecta'});
         }
         
     } 
