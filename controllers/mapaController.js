@@ -43,6 +43,16 @@ exports.getMapas = async(req,res) =>{
     }
 }
 
+exports.getMapasCoordenadas = async(req,res) =>{
+    try{
+        const mapa = await Mapa.find({}, { nombreMapa: 1, coordLat: 1, coordLng: 1 });
+        res.json(mapa);
+    }
+    catch(error){
+        console.log("Hubo un problema");
+    }
+}
+
 
 
 exports.assignCoordenadas = async (req, res) => {

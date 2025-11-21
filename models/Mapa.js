@@ -13,6 +13,14 @@ const MapaSchema = mongoose.Schema({
         type:String,
         required:true
     },
+    coordLat:{
+        type:String,
+        required:true
+    },
+    coordLng:{
+        type:String,
+        required:true
+    },
     coordenadas:[{type:Schema.Types.ObjectId,ref:'Coordenada'}],
 });
 

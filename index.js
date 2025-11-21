@@ -17,6 +17,6 @@ app.use(cors(corsOptions));
 
 app.use('/casNov',require('./routes/rutas'));
 
-app.listen(5000,()=>{
+app.listen(5000, 'localhost', ()=>{
     console.log('Servidor corriendo perfectamente');
 })
