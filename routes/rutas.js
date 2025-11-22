@@ -81,6 +81,7 @@ router.get('/getLeadsVendorMes',leadController.getLeadsVendorMes);
 router.get('/getCategoryLeads',leadController.getCategoryLeads);
 router.post('/cambiarVendorLead',leadController.cambiarVendorLead);
 
+router.get('/getUsernameById/:id',leadController.getUsernameById);
 
 
 router.get('/getLeadsApartados',leadController.getLeadsApartados);

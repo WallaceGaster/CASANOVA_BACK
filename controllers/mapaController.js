@@ -32,7 +32,6 @@ exports.eliminarPorId = async (req, res) => {
     }
 };
 
-
 exports.getMapas = async(req,res) =>{
     try{
         const mapa = await Mapa.find();
