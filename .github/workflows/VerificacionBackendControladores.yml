@@ -156,11 +156,15 @@ jobs:
               {
                 nombreMapa: 'Desarrollo Norte',
                 urlMapa: '/maps/desarrollo-norte.jpg',
+                coordLng: '10',
+                coordLat: '10',
                 coordenadas: []
               },
               {
                 nombreMapa: 'Desarrollo Sur',
                 urlMapa: '/maps/desarrollo-sur.jpg',
+                coordLng: '10',
+                coordLat: '10',
                 coordenadas: []
               }
             ]);
